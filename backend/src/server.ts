@@ -1,8 +1,8 @@
 import dotenv from 'dotenv'
 import fastify, { FastifyInstance } from 'fastify'
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify'
-import { query, pool, healthCheck, closePool } from './dbConn'
-import { appRouter } from './trpc'
+import { pool, closePool } from './db'
+import { appRouter, createContext } from './trpc'
 
 dotenv.config()
 
@@ -46,7 +46,10 @@ const registerRoutes = async (): Promise<void> => {
     // Register tRPC
     await server.register(fastifyTRPCPlugin, {
         prefix: '/trpc',
-        trpcOptions: { router: appRouter }
+        trpcOptions: {
+            router: appRouter,
+            createContext
+        }
     })
 
     // Root route
@@ -60,8 +63,8 @@ const registerRoutes = async (): Promise<void> => {
 
 }
 
-// Graceful shutdown function
-const gracefulShutdown = async (signal: string): Promise<void> => {
+// Shutdown function
+const shutdown = async (signal: string): Promise<void> => {
     server.log.info(`Received ${signal}, shutting down...`)
     try {
         await server.close()
@@ -77,17 +80,17 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (err: Error) => {
     server.log.error('Uncaught Exception:', err)
-    gracefulShutdown('uncaughtException')
+    shutdown('uncaughtException')
 })
 
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     server.log.error('Unhandled Rejection at:', promise, 'reason:', reason)
-    gracefulShutdown('unhandledRejection')
+    shutdown('unhandledRejection')
 })
 
 // Handle termination signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
-process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))
 
 // Start server
 const start = async (): Promise<void> => {

@@ -1,32 +1,27 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "tRPC Demo Backend - Fastify + PostgreSQL + Drizzle ORM",
   "license": "ISC",
-  "author": "",
   "type": "commonjs",
-  "main": "app.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
-    "dev:watch": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",
-    "@prisma/client": "^6.12.0",
-    "@trpc/client": "^11.4.3",
     "@trpc/server": "^11.4.3",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.0",
-    "express": "^5.1.0",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.3",
     "fastify": "^5.4.0",
-    "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
-    "prisma": "^6.12.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {

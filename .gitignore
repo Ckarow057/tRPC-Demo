@@ -50,13 +50,10 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
-# Vite build output
+# Build outputs
 dist/
 dist-ssr/
-
-# Rollup build output
 build/
 
 # Gatsby files
