@@ -46,7 +46,11 @@ export class TokenManager {
         if (!token) return true;
 
         try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            // Standard JWT format: header.payload.signature
+            const parts = token.split('.');
+            if (parts.length !== 3) return true;
+
+            const payload = JSON.parse(atob(parts[1]));
             const currentTime = Math.floor(Date.now() / 1000);
             return payload.exp < currentTime;
         } catch (error) {
@@ -60,7 +64,11 @@ export class TokenManager {
         if (!token) return null;
 
         try {
-            return JSON.parse(atob(token.split('.')[1]));
+            // Standard JWT format: header.payload.signature
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+
+            return JSON.parse(atob(parts[1]));
         } catch (error) {
             return null;
         }

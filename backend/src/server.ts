@@ -38,7 +38,7 @@ const testConnection = async (): Promise<void> => {
 // Register routes
 const registerRoutes = async (): Promise<void> => {
     // Register CORS
-    await server.register(require('@fastify/cors'), {
+    await server.register(import('@fastify/cors'), {
         origin: true, // Allow all origins in development
         credentials: true
     })

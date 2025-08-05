@@ -20,7 +20,6 @@ const pool = new Pool({
 // Create Drizzle database instance
 export const db = drizzle(pool, { schema });
 
-// Health check function
 export const healthCheck = async (): Promise<{ healthy: boolean; timestamp: string; error?: string }> => {
     try {
         await pool.query('SELECT 1 as health_check');
@@ -30,7 +29,6 @@ export const healthCheck = async (): Promise<{ healthy: boolean; timestamp: stri
     }
 };
 
-// Graceful shutdown function
 export const closePool = async (): Promise<void> => {
     await pool.end();
 };

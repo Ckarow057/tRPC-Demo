@@ -53,7 +53,7 @@ export const appRouter = router({
         // Login endpoint - public
         login: publicProcedure
             .input(z.object({
-                email: z.string().email(),
+                email: z.email(),
                 // In a real app, you'd verify password here
                 password: z.string().min(1)
             }))
@@ -70,9 +70,6 @@ export const appRouter = router({
                     }
 
                     const user = userResult[0]
-
-                    // In a real app, verify password hash here
-                    // For demo purposes, we'll accept any password
 
                     // Generate token
                     const token = generateToken({

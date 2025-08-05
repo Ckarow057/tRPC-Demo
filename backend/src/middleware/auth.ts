@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
 
 // Type for the decoded token payload
 export interface TokenPayload {
@@ -11,83 +12,50 @@ export interface TokenPayload {
     exp?: number;
 }
 
-// Mock JWT secret - in production, use proper environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// JWT secret - in production, use proper environment variable
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6';
 
-// Simple JWT encode/decode functions using Node.js built-in crypto
-// In production, consider using a proper JWT library like 'jsonwebtoken'
-function base64UrlEncode(str: string): string {
-    return Buffer.from(str)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
-}
-
-function base64UrlDecode(str: string): string {
-    // Add padding if necessary
-    str += '==='.slice(0, (4 - str.length % 4) % 4);
-    // Replace URL-safe characters
-    str = str.replace(/-/g, '+').replace(/_/g, '/');
-    return Buffer.from(str, 'base64').toString();
-}
-
-// Simple HMAC-SHA256 signature
-function sign(data: string, secret: string): string {
-    const crypto = require('crypto');
-    return crypto.createHmac('sha256', secret).update(data).digest('base64url');
-}
-
-// Generate JWT token
+// Generate JWT token using jsonwebtoken library
 export function generateToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): string {
-    const header = {
-        alg: 'HS256',
-        typ: 'JWT'
-    };
-
-    const now = Math.floor(Date.now() / 1000);
-    const tokenPayload: TokenPayload = {
-        ...payload,
-        iat: now,
-        exp: now + (24 * 60 * 60) // 24 hours
-    };
-
-    const encodedHeader = base64UrlEncode(JSON.stringify(header));
-    const encodedPayload = base64UrlEncode(JSON.stringify(tokenPayload));
-    const signature = sign(`${encodedHeader}.${encodedPayload}`, JWT_SECRET);
-
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
-}
-
-// Verify JWT token
-export function verifyToken(token: string): TokenPayload {
     try {
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-            throw new Error('Invalid token format');
-        }
-
-        const [encodedHeader, encodedPayload, signature] = parts;
-
-        // Verify signature
-        const expectedSignature = sign(`${encodedHeader}.${encodedPayload}`, JWT_SECRET);
-        if (signature !== expectedSignature) {
-            throw new Error('Invalid token signature');
-        }
-
-        // Decode payload
-        const payload: TokenPayload = JSON.parse(base64UrlDecode(encodedPayload));
-
-        // Check expiration
-        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-            throw new Error('Token expired');
-        }
-
-        return payload;
+        return jwt.sign(
+            payload,
+            JWT_SECRET,
+            {
+                expiresIn: '24h', // 24 hours
+                algorithm: 'HS256'
+            }
+        );
     } catch (error) {
         throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to generate token',
+        });
+    }
+}
+
+// Verify JWT token using jsonwebtoken library
+export function verifyToken(token: string): TokenPayload {
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET, {
+            algorithms: ['HS256']
+        }) as TokenPayload;
+
+        return decoded;
+    } catch (error) {
+        let message = 'Invalid token';
+
+        if (error instanceof jwt.TokenExpiredError) {
+            message = 'Token expired';
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            message = 'Invalid token signature';
+        } else if (error instanceof jwt.NotBeforeError) {
+            message = 'Token not active yet';
+        }
+
+        throw new TRPCError({
             code: 'UNAUTHORIZED',
-            message: error instanceof Error ? error.message : 'Invalid token',
+            message,
         });
     }
 }
